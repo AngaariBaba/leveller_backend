@@ -6,16 +6,8 @@ const bodyparser = require('body-parser');
 app.use(cors());
 app.use(bodyparser());
 
-let users = []
+let users = [{name:"naman",username:"angaari",password:"1234",rank:"awaken beast"}];
 let stats = []
-
-app.get('/',(req,res)=>{
-    
-    res.send("Active server");
-});
-
-
-
 
 
 const questions = [['Print numbers from A to B'
@@ -79,7 +71,8 @@ app.post("/activeday",(req,res)=>{
         {
             console.log("79",users[i].active_day);
             day = users[i].active_day;
-                }
+            console.log(day);
+        }
     }
     
     res.json({active_day:day});
