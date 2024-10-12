@@ -3,8 +3,20 @@ const app = express();
 const cors = require('cors');
 const bodyparser = require('body-parser');
 
+const mongoose = require('mongoose');
+
+// Replace 'yourMongoDBURI' with your actual MongoDB connection string
+const pass = encodeURIComponent('Navya#1427');
+mongoose.connect(`mongodb+srv://trickerbaby:${pass}@cluster0.rq5ucba.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => console.log("Connected to MongoDB"))
+.catch(err => console.log("Error connecting to MongoDB: ", err));
+
+
 app.use(cors());
-app.use(bodyparser());
+app.use(bodyparser.json());
 
 let users = [];
 let stats = [];
@@ -12,11 +24,11 @@ let stats = [];
 const questions = [
     [
       { name: "Print Hello World", link: "https://www.programiz.com/java-programming/online-compiler/",topic:"For-Loop" },
-      { name: "Print Hello World N Times", link: "https://www.programiz.com/java-programming/online-compiler/",topic:"For-Loop" },
-      { name: "Print numbers from A to B", link: "https://www.programiz.com/java-programming/online-compiler/",topic:"For-Loop" }
+      { name: "Print Hello World N Times", link: "https://www.programiz.com/online-compiler/5WvvXlbFP3chc",topic:"For-Loop" },
+      { name: "Print numbers from A to B", link: "https://www.programiz.com/online-compiler/5WvvXlbFP3chc",topic:"For-Loop" }
     ],
     [
-      { name: "Print sum of numbers from A to B", link: "https://www.programiz.com/java-programming/online-compiler/",topic:"For-Loop" },
+      { name: "Print sum of numbers from A to B", link: "https://www.programiz.com/online-compiler/5FWW44o6W9chD",topic:"For-Loop" },
       { name: "Print Evens from A to B", link: "https://www.programiz.com/java-programming/online-compiler/",topic:"For-Loop" },
       { name: "Print sum of evens from A to B", link: "https://www.programiz.com/java-programming/online-compiler/",topic:"For-Loop" }
     ],
@@ -220,6 +232,25 @@ const questions = [
       
 
 
+  app.post("/getstats",(req,res)=>{
+
+      const username = req.body.user;
+      let rank = 'UnRanked';
+      let streak = 0;
+      for(let i = 0;i<users.length;i++)
+      {
+        if(users[i].username == username)
+        {
+          rank = stats[i].rank;
+          streak = stats[i].streak; 
+          rage = stats[i].rage;
+        }
+      }
+
+      res.json({streak,rank,rage});
+
+  });
+
 
   app.post('/getdetails',(req,res)=>{
     console.log("Fetching details...");
@@ -251,6 +282,8 @@ const questions = [
           stats[i].rank = req.body.rank;
         }
       }
+      console.log(stats)
+      res.json({ok:true});
 
   })
   
@@ -372,6 +405,10 @@ app.post("/increment",(req,res)=>{
     console.log(users);
     console.log(stats);
     res.json({ok:true});
+})
+
+app.get("/",(req,res)=>{
+  res.send("Wrokng");
 })
 
 app.listen(3001,()=>{
