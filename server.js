@@ -15,11 +15,30 @@ mongoose.connect(`mongodb+srv://trickerbaby:${pass}@cluster0.rq5ucba.mongodb.net
 .catch(err => console.log("Error connecting to MongoDB: ", err));
 
 
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true },
+  password: { type: String, required: true },
+  active_day: { type: Number, default: 0 },
+  name: {type: String, required: true},
+  last_solve: {type: Number,required: true}
+});
+
+const User = mongoose.model('User', userSchema);
+
+const StatsSchema = new mongoose.Schema({
+  username: {type:String,required:true},
+  rank: {type:String,required:true},
+  rage: {type:Number,required:true},
+  streak: {type:Number,required:true},
+});
+
+const Stats = mongoose.model('Stats',StatsSchema);
+
+
 app.use(cors());
 app.use(bodyparser.json());
 
-let users = [];
-let stats = [];
+
 
 const questions = [
     [
@@ -232,106 +251,103 @@ const questions = [
       
 
 
-  app.post("/getstats",(req,res)=>{
+
+  app.post("/getstats",async (req,res)=>{
 
       const username = req.body.user;
       let rank = 'UnRanked';
       let streak = 0;
-      for(let i = 0;i<users.length;i++)
-      {
-        if(users[i].username == username)
-        {
-          rank = stats[i].rank;
-          streak = stats[i].streak; 
-          rage = stats[i].rage;
-        }
-      }
+      let rage = 0;
+
+      const userStat = await Stats.findOne({username});
+
+      rank = userStat.rank;
+      streak = userStat.streak;
+      rage = userStat.rage;
 
       res.json({streak,rank,rage});
-
   });
 
 
-  app.post('/getdetails',(req,res)=>{
+  app.post('/getdetails',async (req,res)=>{
     console.log("Fetching details...");
     let rage = 0;
     let streak = 0;
-    for(let i = 0;i<users.length;i++)
-    {
-      if(users[i].username == req.body.user)
-      {
-        console.log("Matched user! for details...");
-        rage = stats[i].rage;
-        streak = stats[i].streak;
-        break;
-      }
-    }
+    //Find out the user name in state
+    //take rage and streak...
+    
+     const data = await Stats.findOne({username:req.body.user});
+     console.log("280 ",data);
+     if(!data)
+     {
+      return;
+     }
+     rage = data.rage;
+     streak = data.streak;
 
     res.json({rage,streak});
   })
 
-  app.post("/setrank",(req,res)=>{
+
+
+
+  app.post("/setrank",async (req,res)=>{
     console.log("setting rank");
     
     console.log(req.body);
+    const user = req.body.user;
 
-      for(let i = 0;i<stats.length;i++)
-      {
-        if(stats[i].username==req.body.user)
-        {
-          stats[i].rank = req.body.rank;
-        }
-      }
-      console.log(stats)
-      res.json({ok:true});
+    const profile = await Stats.findOne({username:user});
+    profile.rank = req.body.rank;
+    console.log(profile);
+    profile.save();
+    res.json({ok:true});
 
   })
   
-app.post("/getname",(req,res)=>{
+app.post("/getname",async (req,res)=>{
 
     console.log("get name ",req.body);
-    console.log("get name users currently",users);
-    
 
-    const name = users.filter((item)=>{
-        return item.username==req.body.user;
-    })
+    const profile = await User.findOne({username:req.body.user});
 
-    console.log(name);
+    console.log(profile.name);
 
-    res.json({name:name[0]})
+    res.json({name:profile.name});
 })
 
 
-app.post("/login",(req,res)=>{
+app.post("/login",async (req,res)=>{
 
-    console.log("logging in ",req.body);
+  console.log("317 logging in ",req.body);
 
-    const profile = users.filter((item)=>{
-        return item.username==req.body.username && item.password == req.body.password;
-    })
 
-    console.log(profile);
-    res.json({profile});
+  const profile = await User.findOne({username:req.body.username,password:req.body.password});
+
+  console.log(profile);
+  res.json({profile});
 
 });
 
 
-app.post("/activeday",(req,res)=>{
+app.post("/activeday",async (req,res)=>{
 
     console.log("72",req.body.user);
+    console.log("getting active day for ",req.body)
     const username = req.body.user;
 
-    let day = 0;
-    for(let i = 0;i<users.length;i++)
+    console.log(username);
+    if(!username)
     {
-        if(users[i].username==username)
-        {
-            console.log("79",users[i].active_day);
-            day = users[i].active_day;
-            console.log(day);
-        }
+      return;
     }
+    
+
+    let day = 0;
+    const profile = await User.findOne({username});
+    console.log(profile);
+
+    day = profile.active_day;
     
     res.json({active_day:day});
 
@@ -352,58 +368,73 @@ app.post("/getquestions",(req,res)=>{
         res.json({questions:que,ok:true});
 })
 
-app.post('/register',(req,res)=>{
+app.post('/register', async (req,res)=>{
     console.log(req.body);
     const {name,username,password}  = req.body;
+
     const timestamp = Date.now();
 
-    users.push({name,username,password,rank:"Awaken Beast",date:'10/4/2024',active_day:0,last_solve:timestamp});
-    
-    stats.push({username,rank:"Awaken Beast",streak:1,rage:100,active_day:0});
-    
-    console.log("new register ",users);
-    console.log("new register stats ",stats);
+    const already = await User.findOne({username});
+
+    if(already)
+    {
+      res.json({error:"User already exists.."});
+      return;
+    }
+
+    const newuser = new User({username,name,password,rank:"Awaken Beast",active_day:0,last_solve:timestamp});
+    await newuser.save();
+
+    const newStat = new Stats({username,rank:"Awaken Beast",rage:100,streak:1});
+    await newStat.save();
+
+
+    console.log("new register ",newuser);
+    console.log("new register stats registered");
     res.json({name,username,password,rank:"Awaken Beast",date:'10/4/2024',active_day:0})
 })
 
 
-app.post("/increment",(req,res)=>{
+app.post("/increment",async (req,res)=>{
     console.log("Incrementing")
     const username = req.body.username;
     console.log(username+" is this");
 
     const timestamp = Date.now();
     
-    for(let i = 0;i<users.length;i++)
+    const profile = await User.findOne({username});
+    
+    if(!profile)
     {
-        if(users[i].username == username)
-        {
-          console.log("**********MATCH FOUND*********8")
-            users[i].active_day+=1;
-            console.log("Stats condition ..",stats[i]);
-            console.log("difference = ",Math.abs(users[i].last_solve - timestamp))
-            if(Math.abs(users[i].last_solve - timestamp) <= 86400000)
-            {
-              
-              users[i].last_solve = timestamp;
-              stats[i].streak+=1;
-              if(stats[i].rage!=100)
-              {
-                stats[i].rage+=10;
-              }
-            }
-            else
-            {
-              stats[i].streak = 1;
-              stats[i].rage-=10
-            }
-            break;
-        }
+      return;
     }
 
-  
-    console.log(users);
-    console.log(stats);
+    const user_last_solve = profile.last_solve;
+    profile.active_day+=1;
+
+    const userStat = await Stats.findOne({username});
+    console.log("405",userStat);
+
+          if(Math.abs(user_last_solve - timestamp) <= 86400000)
+          {
+            
+            profile.last_solve = timestamp;
+            userStat.streak+=1;
+
+            if(userStat.rage!=100)
+            {
+              userStat.rage+=10;
+            }
+          }
+          else
+          {
+            userStat.streak = 1;
+            userStat.rage-=10
+          }
+
+          userStat.save();
+          profile.save();
+
     res.json({ok:true});
 })
 
