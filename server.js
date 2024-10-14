@@ -82,8 +82,7 @@ const questions = [
       { name: "Check if a number is armstrong", link: "https://www.programiz.com/java-programming/online-compiler/" ,topic:"While-Loop"},
       { name: "Check neon number", link: "https://www.programiz.com/java-programming/online-compiler/" ,topic:"While-Loop"}
     ],
-    [
-     
+    [ 
       { name: "Print sum of array elements", link: "https://www.programiz.com/java-programming/online-compiler/",topic:"Array-1D Scan" },
       { name: "Print sum of even array elements", link: "https://www.programiz.com/java-programming/online-compiler/",topic:"Array-1D Scan" }
     ],
@@ -430,6 +429,7 @@ app.post("/increment",async (req,res)=>{
           {
             userStat.streak = 1;
             userStat.rage-=10
+            profile.last_solve = timestamp;
           }
 
           userStat.save();
