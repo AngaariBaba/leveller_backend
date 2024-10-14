@@ -413,7 +413,11 @@ app.post("/increment",async (req,res)=>{
 
     const userStat = await Stats.findOne({username});
     console.log("405",userStat);
-
+    console.log(req.body.username,"",user_last_solve);
+    console.log(req.body.username,"",timestamp);
+    console.log("differecne = ",Math.abs(user_last_solve - timestamp));
+    console.log("setting current timestamp = ",timestamp);
+    
           if(Math.abs(user_last_solve - timestamp) <= 86400000)
           {
             
@@ -431,7 +435,8 @@ app.post("/increment",async (req,res)=>{
             userStat.rage-=10
             profile.last_solve = timestamp;
           }
-
+          profile.last_solve = timestamp;
+          console.log("new current timestamp = ",profile.last_solve);
           userStat.save();
           profile.save();
 
